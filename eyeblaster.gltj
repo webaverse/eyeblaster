@@ -1,8 +1,11 @@
 {
   uniforms: {
     iTime: {
-      type: 'f',
-      value: 0,
+      value: null,
+      needsUpdate: true,
+    },
+    iResolution: {
+      value: null,
       needsUpdate: true,
     },
   },
