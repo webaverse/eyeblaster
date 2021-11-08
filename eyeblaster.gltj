@@ -13,12 +13,14 @@
     precision highp float;
     precision highp int;
 
+    uniform vec2 iResolution;
     varying vec2 vUv;
 
     void main() {
       gl_Position = vec4(position.x, position.y, 0.99, 1.);
 
       vUv = position.xy;
+      vUv.y *= iResolution.y/iResolution.x;
     }
   `,
   fragmentShader: `\
