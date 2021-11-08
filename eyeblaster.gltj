@@ -1,0 +1,111 @@
+{
+  uniforms: {
+    iTime: {
+      type: 'f',
+      value: 0,
+      needsUpdate: true,
+    },
+  },
+  vertexShader: `\
+    precision highp float;
+    precision highp int;
+
+    varying vec2 vUv;
+
+    void main() {
+      gl_Position = vec4(position.x, position.y, 0.99, 1.);
+
+      vUv = position.xy;
+    }
+  `,
+  fragmentShader: `\
+    precision highp float;
+    precision highp int;
+
+    uniform float iTime;
+
+    varying vec2 vUv;
+    
+    vec2 rotateCCW(vec2 pos, float angle) { 
+      float ca = cos(angle),  sa = sin(angle);
+      return pos * mat2(ca, sa, -sa, ca);  
+    }
+    
+    vec2 rotateCCW(vec2 pos, vec2 around, float angle) { 
+      pos -= around;
+      pos = rotateCCW(pos, angle);
+      pos += around;
+      return pos;
+    }
+
+    // return 1 if v inside the box, return 0 otherwise
+    float insideBox(vec2 v, vec2 bottomLeft, vec2 topRight) {
+        vec2 s = step(bottomLeft, v) - step(topRight, v);
+        return s.x * s.y;   
+    }
+
+    bool isPointInTriangle(vec2 point, vec2 a, vec2 b, vec2 c) {
+      vec2 v0 = c - a;
+      vec2 v1 = b - a;
+      vec2 v2 = point - a;
+
+      float dot00 = dot(v0, v0);
+      float dot01 = dot(v0, v1);
+      float dot02 = dot(v0, v2);
+      float dot11 = dot(v1, v1);
+      float dot12 = dot(v1, v2);
+
+      float invDenom = 1. / (dot00 * dot11 - dot01 * dot01);
+      float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+      float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+      return (u >= 0.) && (v >= 0.) && (u + v < 1.);
+    }
+    
+    const float timeFactor = 1.;
+
+    void main() {
+      vec3 color = vec3(0.);
+      
+      vec2 a = vec2(-0.2, -0.2);
+      vec2 b = vec2(0.2, -0.2);
+      vec2 c = vec2(0, 0.2);
+      a = rotateCCW(a, vec2(0., 0.), iTime * timeFactor);
+      b = rotateCCW(b, vec2(0., 0.), iTime * timeFactor);
+      c = rotateCCW(c, vec2(0., 0.), iTime * timeFactor);
+      
+      if (isPointInTriangle(vUv, a, b, c)) {
+        color.r = 1.;
+      }
+      
+      vec2 half2 = vec2(0.5, 0.5);
+      vec2 bottomLeft = vec2(0.5, 0.5);
+      vec2 topRight = vec2(0.75, 0.75);
+      vec2 bottomRight = vec2(topRight.x, bottomLeft.y);
+      vec2 topLeft = vec2(bottomLeft.x, topRight.y);
+      bottomLeft = rotateCCW(bottomLeft, half2, iTime * timeFactor);
+      topRight = rotateCCW(topRight, half2, iTime * timeFactor);
+      bottomRight = rotateCCW(bottomRight, half2, iTime * timeFactor);
+      topLeft = rotateCCW(topLeft, half2, iTime * timeFactor);
+      
+      if (
+        isPointInTriangle(vUv, bottomLeft, bottomRight, topRight) ||
+        isPointInTriangle(vUv, bottomLeft, topLeft, topRight)
+      ) {
+        color.g = 1.;
+      }
+      
+      /* if (insideBox(vUv, bottomLeft, topRight) > 0.) {
+        color.g = 1.;
+      } */
+      color.b = 1.;
+      
+      gl_FragColor = vec4(color, 1.);
+    }
+  `,
+  transparent: true,
+  // depthTest: false,
+  // polygonOffset: true,
+  // polygonOffsetFactor: -1,
+  // polygonOffsetUnits: 1,
+}
