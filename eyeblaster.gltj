@@ -44,9 +44,9 @@
     }
 
     // return 1 if v inside the box, return 0 otherwise
-    float insideBox(vec2 v, vec2 bottomLeft, vec2 topRight) {
+    bool insideAABB(vec2 v, vec2 bottomLeft, vec2 topRight) {
         vec2 s = step(bottomLeft, v) - step(topRight, v);
-        return s.x * s.y;   
+        return s.x * s.y > 0.;   
     }
 
     bool isPointInTriangle(vec2 point, vec2 a, vec2 b, vec2 c) {
@@ -83,9 +83,11 @@
         color.r = 1.;
       }
       
+      // root
       vec2 half2 = vec2(0.5, 0.5);
       vec2 bottomLeft = vec2(0.5, 0.5);
       vec2 topRight = vec2(0.75, 0.75);
+      // derived
       vec2 bottomRight = vec2(topRight.x, bottomLeft.y);
       vec2 topLeft = vec2(bottomLeft.x, topRight.y);
       bottomLeft = rotateCCW(bottomLeft, half2, iTime * timeFactor);
@@ -99,11 +101,25 @@
       ) {
         color.g = 1.;
       }
-      
-      /* if (insideBox(vUv, bottomLeft, topRight) > 0.) {
-        color.g = 1.;
-      } */
-      color.b = 1.;
+
+      {
+        // root
+        float f = mod(iTime, 1.);
+        vec2 bottomLeft = vec2(-0.7, 1. - f);
+        vec2 topRight = vec2(-0.5, 2. - f);
+        // derived
+        float width = topRight.x - bottomLeft.x;
+        vec2 bottomRight = bottomLeft + vec2(width, 0.);
+        vec2 center = bottomLeft + vec2(width/2., 0.);
+        vec2 tip = bottomLeft + vec2(width/2., -0.07);
+        if (
+          insideAABB(vUv, bottomLeft, topRight) ||
+          isPointInTriangle(vUv, bottomLeft, tip, center) ||
+          isPointInTriangle(vUv, bottomRight, tip, center)
+        ) {
+          color.g = 1.;
+        }
+      }
       
       gl_FragColor = vec4(color, 1.);
     }
